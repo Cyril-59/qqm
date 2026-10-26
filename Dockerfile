@@ -13,4 +13,4 @@ FROM eclipse-temurin:21-jre-alpine
 COPY --from=build /home/app/target/recette-1.0.0.jar /usr/local/lib/recette.jar
 EXPOSE 8080
 ENV PORT=8080
-ENTRYPOINT ["java","-jar","/usr/local/lib/recette.jar"]
+ENTRYPOINT ["sh", "-c", "java -XX:MaxRAMPercentage=75.0 -jar /usr/local/lib/recette.jar"]
