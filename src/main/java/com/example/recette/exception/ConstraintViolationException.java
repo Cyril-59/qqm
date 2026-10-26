@@ -3,11 +3,11 @@ package com.example.recette.exception;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.ResponseStatus;
 
-@ResponseStatus(value = HttpStatus.FORBIDDEN)
+@ResponseStatus(value = HttpStatus.CONFLICT)
 public class ConstraintViolationException extends RuntimeException {
-    private String resourceName;
-    private String fieldName;
-    private Object fieldValue;
+    private final String resourceName;
+    private final String fieldName;
+    private final Object fieldValue;
 
     public ConstraintViolationException(String resourceName, String fieldName, Object fieldValue) {
         super(String.format("%s not deletable with %s : '%s'", resourceName, fieldName, fieldValue));
