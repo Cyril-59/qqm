@@ -127,6 +127,16 @@ class RecetteApplicationTests {
 						.header("Origin", "http://localhost:4200"))
 				.andExpect(status().isOk())
 				.andExpect(header().string("Access-Control-Allow-Origin", "http://localhost:4200"));
+
+		mockMvc.perform(get("/api/produits")
+						.header("Origin", "https://recette-lac.vercel.app"))
+				.andExpect(status().isOk())
+				.andExpect(header().string("Access-Control-Allow-Origin", "https://recette-lac.vercel.app"));
+
+		mockMvc.perform(get("/api/produits")
+						.header("Origin", "https://preview-deploy.vercel.app"))
+				.andExpect(status().isOk())
+				.andExpect(header().string("Access-Control-Allow-Origin", "https://preview-deploy.vercel.app"));
 	}
 
 	@Test
