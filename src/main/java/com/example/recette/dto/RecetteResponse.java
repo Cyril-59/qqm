@@ -4,10 +4,14 @@ import com.example.recette.model.Recette;
 
 import java.time.Instant;
 import java.util.List;
+import java.util.Set;
 
 public record RecetteResponse(
         Long id,
         String titre,
+        String instructions,
+        Set<String> tags,
+        List<RecetteSummaryResponse> linkedRecettes,
         Boolean ete,
         Boolean printemps,
         Boolean automne,
@@ -21,6 +25,9 @@ public record RecetteResponse(
         return new RecetteResponse(
                 r.getId(),
                 r.getTitre(),
+                r.getInstructions(),
+                r.getTags() != null ? r.getTags() : Set.of(),
+                r.getLinkedRecettes() != null ? r.getLinkedRecettes().stream().map(RecetteSummaryResponse::from).toList() : List.of(),
                 r.getEte(),
                 r.getPrintemps(),
                 r.getAutomne(),

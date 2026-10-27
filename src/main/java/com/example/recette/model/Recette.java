@@ -9,7 +9,9 @@ import jakarta.persistence.*;
 import jakarta.validation.constraints.NotBlank;
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Set;
 
 /**
  * Created by Cyril on 18/04/20.
@@ -26,6 +28,22 @@ public class Recette {
 
     @NotBlank
     private String titre;
+
+    @Column(columnDefinition = "TEXT")
+    private String instructions;
+
+    @ElementCollection(fetch = FetchType.LAZY)
+    @CollectionTable(name = "recette_tags", joinColumns = @JoinColumn(name = "recette_id"))
+    @Column(name = "tag")
+    private Set<String> tags = new LinkedHashSet<>();
+
+    @ManyToMany(fetch = FetchType.LAZY)
+    @JoinTable(
+            name = "recette_linked_recettes",
+            joinColumns = @JoinColumn(name = "recette_id"),
+            inverseJoinColumns = @JoinColumn(name = "linked_recette_id")
+    )
+    private Set<Recette> linkedRecettes = new LinkedHashSet<>();
 
     @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     private List<Ingredient> ingredients = new ArrayList<>();
@@ -73,6 +91,30 @@ public class Recette {
 
     public void setTitre(String titre) {
         this.titre = titre;
+    }
+
+    public String getInstructions() {
+        return instructions;
+    }
+
+    public void setInstructions(String instructions) {
+        this.instructions = instructions;
+    }
+
+    public Set<String> getTags() {
+        return tags;
+    }
+
+    public void setTags(Set<String> tags) {
+        this.tags = tags;
+    }
+
+    public Set<Recette> getLinkedRecettes() {
+        return linkedRecettes;
+    }
+
+    public void setLinkedRecettes(Set<Recette> linkedRecettes) {
+        this.linkedRecettes = linkedRecettes;
     }
 
     public List<Ingredient> getIngredients() {

@@ -14,11 +14,11 @@ import java.util.Optional;
 @Repository
 public interface RecetteRepository extends JpaRepository<Recette, Long> {
 
-    @EntityGraph(attributePaths = {"ingredients", "ingredients.produit"})
+    @EntityGraph(attributePaths = {"ingredients", "ingredients.produit", "tags", "linkedRecettes"})
     @Override
     List<Recette> findAll();
 
-    @EntityGraph(attributePaths = {"ingredients", "ingredients.produit"})
+    @EntityGraph(attributePaths = {"ingredients", "ingredients.produit", "tags", "linkedRecettes"})
     @Override
     Optional<Recette> findById(Long id);
 }

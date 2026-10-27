@@ -5,6 +5,7 @@ import com.example.recette.dto.ProduitReferenceRequest;
 import com.example.recette.dto.ProduitRequest;
 import com.example.recette.dto.RecetteRequest;
 import com.example.recette.model.Produit;
+import com.example.recette.model.Recette;
 import com.example.recette.repository.ProduitRepository;
 import com.example.recette.repository.RecetteRepository;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -77,12 +78,16 @@ class RecetteApplicationTests {
 		p.setType("Épicerie");
 		Produit savedProduit = produitRepository.save(p);
 
+		Recette r1 = new Recette();
+		r1.setTitre("Sauce tomate");
+		Recette savedLinked = recetteRepository.save(r1);
+
 		IngredientRequest ing = new IngredientRequest(
 				null, 250, new ProduitReferenceRequest(savedProduit.getId(), savedProduit.getLabel())
 		);
 
 		RecetteRequest r = new RecetteRequest(
-				null, "Pâtes nature", false, false, true, true, List.of(ing)
+				null, "Pâtes nature", "Faire bouillir l'eau salée, cuire 10 min.", java.util.Set.of("Végétarien", "Express (< 25 min)"), List.of(savedLinked.getId()), false, false, true, true, List.of(ing)
 		);
 
 		mockMvc.perform(post("/api/recettes")
@@ -91,6 +96,9 @@ class RecetteApplicationTests {
 				.andExpect(status().isOk())
 				.andExpect(jsonPath("$.id").exists())
 				.andExpect(jsonPath("$.titre").value("Pâtes nature"))
+				.andExpect(jsonPath("$.instructions").value("Faire bouillir l'eau salée, cuire 10 min."))
+				.andExpect(jsonPath("$.tags[0]").exists())
+				.andExpect(jsonPath("$.linkedRecettes[0].id").value(savedLinked.getId()))
 				.andExpect(jsonPath("$.ingredients[0].quantite").value(250))
 				.andExpect(jsonPath("$.ingredients[0].produit.label").value("Pâtes"));
 
@@ -145,5 +153,32 @@ class RecetteApplicationTests {
 				.andExpect(status().isOk())
 				.andExpect(jsonPath("$.openapi").exists())
 				.andExpect(jsonPath("$.info.title").value("API Recette"));
+	}
+
+	@Test
+	void testMenuSelection() throws Exception {
+		Recette r = new Recette();
+		r.setTitre("Gratin dauphinois");
+		Recette savedRecette = recetteRepository.save(r);
+
+		// 1. Initialement vide ou existant
+		mockMvc.perform(get("/api/menu"))
+				.andExpect(status().isOk())
+				.andExpect(jsonPath("$").isArray());
+
+		// 2. Enregistrement d'une sélection de menu
+		mockMvc.perform(post("/api/menu")
+						.contentType(MediaType.APPLICATION_JSON)
+						.content(objectMapper.writeValueAsString(new com.example.recette.dto.MenuSelectionRequest(List.of(savedRecette.getId())))))
+				.andExpect(status().isOk())
+				.andExpect(jsonPath("$").isArray())
+				.andExpect(jsonPath("$[0].id").value(savedRecette.getId()))
+				.andExpect(jsonPath("$[0].titre").value("Gratin dauphinois"));
+
+		// 3. Récupération de la dernière sélection
+		mockMvc.perform(get("/api/menu"))
+				.andExpect(status().isOk())
+				.andExpect(jsonPath("$[0].id").value(savedRecette.getId()))
+				.andExpect(jsonPath("$[0].titre").value("Gratin dauphinois"));
 	}
 }

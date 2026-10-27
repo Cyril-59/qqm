@@ -66,6 +66,18 @@ public class RecetteService {
 
     private void mapRequestToEntity(RecetteRequest request, Recette recette) {
         recette.setTitre(request.titre());
+        recette.setInstructions(request.instructions());
+        if (request.tags() != null) {
+            recette.setTags(new java.util.LinkedHashSet<>(request.tags()));
+        } else {
+            recette.getTags().clear();
+        }
+        if (request.linkedRecetteIds() != null && !request.linkedRecetteIds().isEmpty()) {
+            List<Recette> linked = recetteRepository.findAllById(request.linkedRecetteIds());
+            recette.setLinkedRecettes(new java.util.LinkedHashSet<>(linked));
+        } else {
+            recette.getLinkedRecettes().clear();
+        }
         recette.setEte(request.ete());
         recette.setPrintemps(request.printemps());
         recette.setAutomne(request.automne());
