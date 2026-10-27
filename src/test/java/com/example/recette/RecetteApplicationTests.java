@@ -4,6 +4,7 @@ import com.example.recette.dto.IngredientRequest;
 import com.example.recette.dto.ProduitReferenceRequest;
 import com.example.recette.dto.ProduitRequest;
 import com.example.recette.dto.RecetteRequest;
+import com.example.recette.dto.RecetteResponse;
 import com.example.recette.model.Produit;
 import com.example.recette.model.Recette;
 import com.example.recette.repository.ProduitRepository;
@@ -20,6 +21,7 @@ import java.util.List;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -55,7 +57,7 @@ class RecetteApplicationTests {
 	@Test
 	void testCreateAndGetProduit() throws Exception {
 		ProduitRequest produitRequest = new ProduitRequest(
-				null, "Tomate", true, true, false, false, "kg", "Légume"
+				null, "Tomate", true, true, false, false, "kg", "épicerie vrac"
 		);
 
 		mockMvc.perform(post("/api/produits")
@@ -63,7 +65,8 @@ class RecetteApplicationTests {
 						.content(objectMapper.writeValueAsString(produitRequest)))
 				.andExpect(status().isOk())
 				.andExpect(jsonPath("$.id").exists())
-				.andExpect(jsonPath("$.label").value("Tomate"));
+				.andExpect(jsonPath("$.label").value("Tomate"))
+				.andExpect(jsonPath("$.type").value("Vrac"));
 
 		mockMvc.perform(get("/api/produits"))
 				.andExpect(status().isOk())
@@ -87,7 +90,7 @@ class RecetteApplicationTests {
 		);
 
 		RecetteRequest r = new RecetteRequest(
-				null, "Pâtes nature", "Faire bouillir l'eau salée, cuire 10 min.", java.util.Set.of("Végétarien", "Express (< 25 min)"), List.of(savedLinked.getId()), false, false, true, true, List.of(ing)
+				null, "Pâtes nature", "Faire bouillir l'eau salée, cuire 10 min.", java.util.Set.of("Végétarien", "Express"), List.of(savedLinked.getId()), false, false, true, true, List.of(ing)
 		);
 
 		mockMvc.perform(post("/api/recettes")
@@ -102,9 +105,62 @@ class RecetteApplicationTests {
 				.andExpect(jsonPath("$.ingredients[0].quantite").value(250))
 				.andExpect(jsonPath("$.ingredients[0].produit.label").value("Pâtes"));
 
+		// Vérifier que la recette liée réciproquement possède bien le lien inverse
+		mockMvc.perform(get("/api/recettes/" + savedLinked.getId()))
+				.andExpect(status().isOk())
+				.andExpect(jsonPath("$.linkedRecettes[0].titre").value("Pâtes nature"));
+
 		mockMvc.perform(get("/api/recettes"))
 				.andExpect(status().isOk())
 				.andExpect(jsonPath("$").isArray());
+	}
+
+	@Test
+	void testUpdateRecetteWithExistingIngredientsAndLinks() throws Exception {
+		Produit p = new Produit();
+		p.setLabel("Lait de coco");
+		p.setUnite("cl");
+		p.setType("Épicerie");
+		Produit savedProduit = produitRepository.save(p);
+
+		Recette rPartner = new Recette();
+		rPartner.setTitre("Curry de légumes");
+		Recette savedPartner = recetteRepository.save(rPartner);
+
+		// 1. Créer une recette avec ingrédient
+		IngredientRequest ing = new IngredientRequest(
+				null, 20, new ProduitReferenceRequest(savedProduit.getId(), savedProduit.getLabel())
+		);
+		RecetteRequest createReq = new RecetteRequest(
+				null, "Dahl de lentilles", "Cuire 20 min.", java.util.Set.of("Végétarien"), List.of(), false, false, true, true, List.of(ing)
+		);
+		String res = mockMvc.perform(post("/api/recettes")
+						.contentType(MediaType.APPLICATION_JSON)
+						.content(objectMapper.writeValueAsString(createReq)))
+				.andExpect(status().isOk())
+				.andReturn().getResponse().getContentAsString();
+
+		RecetteResponse created = objectMapper.readValue(res, RecetteResponse.class);
+		Long createdId = created.id();
+		Long createdIngId = created.ingredients().get(0).id();
+
+		// 2. Mettre à jour avec l'ID d'ingrédient existant et ajouter la liaison anti-gaspillage
+		IngredientRequest updateIng = new IngredientRequest(
+				createdIngId, 25, new ProduitReferenceRequest(savedProduit.getId(), savedProduit.getLabel())
+		);
+		RecetteRequest updateReq = new RecetteRequest(
+				createdId, "Dahl de lentilles au coco", "Cuire 25 min.", java.util.Set.of("Végétarien"),
+				List.of(savedPartner.getId()), false, false, true, true, List.of(updateIng)
+		);
+
+		mockMvc.perform(put("/api/recettes/" + createdId)
+						.contentType(MediaType.APPLICATION_JSON)
+						.content(objectMapper.writeValueAsString(updateReq)))
+				.andExpect(status().isOk())
+				.andExpect(jsonPath("$.id").value(createdId))
+				.andExpect(jsonPath("$.titre").value("Dahl de lentilles au coco"))
+				.andExpect(jsonPath("$.ingredients[0].quantite").value(25))
+				.andExpect(jsonPath("$.linkedRecettes[0].id").value(savedPartner.getId()));
 	}
 
 	@Test

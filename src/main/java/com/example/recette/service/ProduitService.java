@@ -15,7 +15,7 @@ import java.util.List;
 @Transactional(readOnly = true)
 public class ProduitService {
 
-    public static final String PRODUIT = "Produit";
+    private static final String PRODUIT = "Produit";
 
     private final ProduitRepository produitRepository;
 
@@ -63,6 +63,25 @@ public class ProduitService {
         }
     }
 
+    public static String normalizeType(String type) {
+        if (type == null) return null;
+        String trimmed = type.trim();
+        if (trimmed.isEmpty()) return trimmed;
+        if ("épicerie vrac".equalsIgnoreCase(trimmed) || "vrac".equalsIgnoreCase(trimmed)) {
+            return "Vrac";
+        }
+        if ("légume".equalsIgnoreCase(trimmed) || "legume".equalsIgnoreCase(trimmed)) {
+            return "Légume";
+        }
+        if ("frais".equalsIgnoreCase(trimmed)) {
+            return "Frais";
+        }
+        if ("épicerie".equalsIgnoreCase(trimmed) || "epicerie".equalsIgnoreCase(trimmed)) {
+            return "Épicerie";
+        }
+        return Character.toUpperCase(trimmed.charAt(0)) + trimmed.substring(1);
+    }
+
     private void mapRequestToEntity(ProduitRequest request, Produit produit) {
         produit.setLabel(request.label());
         produit.setEte(request.ete());
@@ -70,6 +89,6 @@ public class ProduitService {
         produit.setAutomne(request.automne());
         produit.setHiver(request.hiver());
         produit.setUnite(request.unite());
-        produit.setType(request.type());
+        produit.setType(normalizeType(request.type()));
     }
 }

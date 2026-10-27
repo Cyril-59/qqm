@@ -18,6 +18,21 @@ public record ProduitResponse(
 ) {
     public static ProduitResponse from(Produit p) {
         if (p == null) return null;
+        String type = p.getType();
+        if (type != null) {
+            String trimmed = type.trim();
+            if ("épicerie vrac".equalsIgnoreCase(trimmed) || "vrac".equalsIgnoreCase(trimmed)) {
+                type = "Vrac";
+            } else if ("légume".equalsIgnoreCase(trimmed) || "legume".equalsIgnoreCase(trimmed)) {
+                type = "Légume";
+            } else if ("frais".equalsIgnoreCase(trimmed)) {
+                type = "Frais";
+            } else if ("épicerie".equalsIgnoreCase(trimmed) || "epicerie".equalsIgnoreCase(trimmed)) {
+                type = "Épicerie";
+            } else if (!trimmed.isEmpty()) {
+                type = Character.toUpperCase(trimmed.charAt(0)) + trimmed.substring(1);
+            }
+        }
         return new ProduitResponse(
                 p.getId(),
                 p.getLabel(),
@@ -26,7 +41,7 @@ public record ProduitResponse(
                 p.getAutomne(),
                 p.getHiver(),
                 p.getUnite(),
-                p.getType(),
+                type,
                 p.getCreatedAt(),
                 p.getUpdatedAt()
         );

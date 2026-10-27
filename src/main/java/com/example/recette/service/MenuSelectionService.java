@@ -38,6 +38,7 @@ public class MenuSelectionService {
         // Use recetteRepository.findAll() which already has @EntityGraph for ingredients and produits
         return recetteRepository.findAll().stream()
                 .filter(r -> selectedIds.contains(r.getId()))
+                .distinct()
                 .map(RecetteResponse::from)
                 .toList();
     }
@@ -46,7 +47,8 @@ public class MenuSelectionService {
     public List<RecetteResponse> saveSelection(MenuSelectionRequest request) {
         MenuSelection menuSelection = new MenuSelection();
         if (request != null && request.recetteIds() != null && !request.recetteIds().isEmpty()) {
-            List<Recette> recettes = recetteRepository.findAllById(request.recetteIds());
+            List<Long> distinctIds = request.recetteIds().stream().distinct().toList();
+            List<Recette> recettes = recetteRepository.findAllById(distinctIds);
             menuSelection.setRecettes(recettes);
         }
         menuSelectionRepository.save(menuSelection);

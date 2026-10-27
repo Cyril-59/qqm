@@ -12,14 +12,13 @@ import com.example.recette.repository.RecetteRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.*;
 
 @Service
 @Transactional(readOnly = true)
 public class RecetteService {
 
-    public static final String RECETTE = "Recette";
+    private static final String RECETTE = "Recette";
 
     private final RecetteRepository recetteRepository;
     private final ProduitRepository produitRepository;
@@ -48,20 +47,56 @@ public class RecetteService {
     public RecetteResponse createRecette(RecetteRequest request) {
         Recette recette = new Recette();
         mapRequestToEntity(request, recette);
-        return RecetteResponse.from(recetteRepository.save(recette));
+        Recette saved = recetteRepository.save(recette);
+        if (request.linkedRecetteIds() != null && !request.linkedRecetteIds().isEmpty()) {
+            syncReciprocalLinks(saved, request.linkedRecetteIds());
+            saved = recetteRepository.save(saved);
+        }
+        return RecetteResponse.from(saved);
     }
 
     @Transactional
     public RecetteResponse updateRecette(Long id, RecetteRequest request) {
         Recette recette = findRecetteEntity(id);
         mapRequestToEntity(request, recette);
+        syncReciprocalLinks(recette, request.linkedRecetteIds());
         return RecetteResponse.from(recetteRepository.save(recette));
     }
 
     @Transactional
     public void deleteRecette(Long id) {
         Recette recette = findRecetteEntity(id);
+        if (recette.getLinkedRecettes() != null) {
+            for (Recette target : new ArrayList<>(recette.getLinkedRecettes())) {
+                target.getLinkedRecettes().remove(recette);
+            }
+            recette.getLinkedRecettes().clear();
+        }
         recetteRepository.delete(recette);
+    }
+
+    private void syncReciprocalLinks(Recette recette, List<Long> linkedIds) {
+        Set<Long> targetIds = linkedIds != null ? new HashSet<>(linkedIds) : Set.of();
+
+        // 1. Dissocier les anciennes recettes retirées
+        Set<Recette> currentLinked = new HashSet<>(recette.getLinkedRecettes());
+        for (Recette oldLink : currentLinked) {
+            if (!targetIds.contains(oldLink.getId())) {
+                recette.getLinkedRecettes().remove(oldLink);
+                oldLink.getLinkedRecettes().remove(recette);
+            }
+        }
+
+        // 2. Associer les nouvelles recettes de manière symétrique
+        if (!targetIds.isEmpty()) {
+            List<Recette> targets = recetteRepository.findAllById(targetIds);
+            for (Recette target : targets) {
+                if (!target.getId().equals(recette.getId())) {
+                    recette.getLinkedRecettes().add(target);
+                    target.getLinkedRecettes().add(recette);
+                }
+            }
+        }
     }
 
     private void mapRequestToEntity(RecetteRequest request, Recette recette) {
@@ -72,33 +107,50 @@ public class RecetteService {
         } else {
             recette.getTags().clear();
         }
-        if (request.linkedRecetteIds() != null && !request.linkedRecetteIds().isEmpty()) {
-            List<Recette> linked = recetteRepository.findAllById(request.linkedRecetteIds());
-            recette.setLinkedRecettes(new java.util.LinkedHashSet<>(linked));
-        } else {
-            recette.getLinkedRecettes().clear();
-        }
         recette.setEte(request.ete());
         recette.setPrintemps(request.printemps());
         recette.setAutomne(request.automne());
         recette.setHiver(request.hiver());
 
-        List<Ingredient> ingredients = new ArrayList<>();
-        if (request.ingredients() != null) {
-            for (IngredientRequest ingReq : request.ingredients()) {
-                Ingredient ing = new Ingredient();
-                if (ingReq.id() != null) {
-                    ing.setId(ingReq.id());
-                }
-                ing.setQuantite(ingReq.quantite());
-                if (ingReq.produit() != null && ingReq.produit().id() != null) {
-                    Produit p = produitRepository.findById(ingReq.produit().id()).orElse(null);
-                    ing.setProduit(p);
-                }
-                ingredients.add(ing);
+        updateIngredients(recette, request.ingredients());
+    }
+
+    private void updateIngredients(Recette recette, List<IngredientRequest> requests) {
+        if (requests == null || requests.isEmpty()) {
+            recette.getIngredients().clear();
+            return;
+        }
+
+        Map<Long, Ingredient> existingById = new HashMap<>();
+        for (Ingredient ing : recette.getIngredients()) {
+            if (ing.getId() != null) {
+                existingById.put(ing.getId(), ing);
             }
         }
-        recette.getIngredients().clear();
-        recette.getIngredients().addAll(ingredients);
+
+        Set<Long> retainIds = new HashSet<>();
+        List<Ingredient> toAdd = new ArrayList<>();
+
+        for (IngredientRequest ingReq : requests) {
+            Produit p = null;
+            if (ingReq.produit() != null && ingReq.produit().id() != null) {
+                p = produitRepository.findById(ingReq.produit().id()).orElse(null);
+            }
+
+            if (ingReq.id() != null && existingById.containsKey(ingReq.id())) {
+                Ingredient existing = existingById.get(ingReq.id());
+                existing.setQuantite(ingReq.quantite());
+                existing.setProduit(p);
+                retainIds.add(existing.getId());
+            } else {
+                Ingredient newIng = new Ingredient();
+                newIng.setQuantite(ingReq.quantite());
+                newIng.setProduit(p);
+                toAdd.add(newIng);
+            }
+        }
+
+        recette.getIngredients().removeIf(ing -> ing.getId() != null && !retainIds.contains(ing.getId()));
+        recette.getIngredients().addAll(toAdd);
     }
 }
