@@ -1,5 +1,6 @@
 package com.example.recette.service;
 
+import com.example.recette.dto.MenuSelectionHistoryResponse;
 import com.example.recette.dto.MenuSelectionRequest;
 import com.example.recette.dto.RecetteResponse;
 import com.example.recette.model.MenuSelection;
@@ -9,9 +10,8 @@ import com.example.recette.repository.RecetteRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.Collections;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
+import java.util.stream.Collectors;
 
 @Service
 @Transactional(readOnly = true)
@@ -35,12 +35,33 @@ public class MenuSelectionService {
                 .map(Recette::getId)
                 .toList();
 
-        // Use recetteRepository.findAll() which already has @EntityGraph for ingredients and produits
         return recetteRepository.findAll().stream()
                 .filter(r -> selectedIds.contains(r.getId()))
                 .distinct()
                 .map(RecetteResponse::from)
                 .toList();
+    }
+
+    public List<MenuSelectionHistoryResponse> getHistory() {
+        List<MenuSelection> top2 = menuSelectionRepository.findTop2ByOrderByIdDesc();
+        if (top2.isEmpty()) {
+            return Collections.emptyList();
+        }
+
+        List<RecetteResponse> allRecettes = recetteRepository.findAll().stream()
+                .map(RecetteResponse::from)
+                .toList();
+        Map<Long, RecetteResponse> recetteMap = allRecettes.stream()
+                .collect(Collectors.toMap(RecetteResponse::id, r -> r, (r1, r2) -> r1));
+
+        return top2.stream().map(ms -> {
+            List<RecetteResponse> list = ms.getRecettes() != null ? ms.getRecettes().stream()
+                    .map(r -> recetteMap.get(r.getId()))
+                    .filter(Objects::nonNull)
+                    .distinct()
+                    .toList() : List.of();
+            return new MenuSelectionHistoryResponse(ms.getId(), ms.getCreatedAt(), list);
+        }).toList();
     }
 
     @Transactional
@@ -52,6 +73,15 @@ public class MenuSelectionService {
             menuSelection.setRecettes(recettes);
         }
         menuSelectionRepository.save(menuSelection);
+
+        // Retenir uniquement les 2 dernières occurrences pour conserver l'historique de la semaine précédente
+        List<MenuSelection> all = menuSelectionRepository.findAllByOrderByIdDesc();
+        if (all.size() > 2) {
+            for (int i = 2; i < all.size(); i++) {
+                menuSelectionRepository.delete(all.get(i));
+            }
+        }
+
         return getLatestSelection();
     }
 

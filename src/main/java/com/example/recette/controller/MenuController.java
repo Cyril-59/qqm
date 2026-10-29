@@ -1,5 +1,6 @@
 package com.example.recette.controller;
 
+import com.example.recette.dto.MenuSelectionHistoryResponse;
 import com.example.recette.dto.MenuSelectionRequest;
 import com.example.recette.dto.RecetteResponse;
 import com.example.recette.service.MenuSelectionService;
@@ -24,6 +25,12 @@ public class MenuController {
     @Operation(summary = "Récupérer les recettes de la dernière sélection du menu")
     public List<RecetteResponse> getLatestSelection() {
         return menuSelectionService.getLatestSelection();
+    }
+
+    @GetMapping("/history")
+    @Operation(summary = "Récupérer l'historique des 2 dernières sélections du menu")
+    public List<MenuSelectionHistoryResponse> getHistory() {
+        return menuSelectionService.getHistory();
     }
 
     @PostMapping

@@ -236,5 +236,35 @@ class RecetteApplicationTests {
 				.andExpect(status().isOk())
 				.andExpect(jsonPath("$[0].id").value(savedRecette.getId()))
 				.andExpect(jsonPath("$[0].titre").value("Gratin dauphinois"));
+
+		// 4. Récupération de l'historique (GET /api/menu/history)
+		mockMvc.perform(get("/api/menu/history"))
+				.andExpect(status().isOk())
+				.andExpect(jsonPath("$").isArray())
+				.andExpect(jsonPath("$[0].recettes[0].id").value(savedRecette.getId()));
+
+		// 5. Sauvegarder d'autres sélections pour vérifier qu'on conserve au maximum 2 occurrences
+		Recette r2 = new Recette();
+		r2.setTitre("Tarte aux pommes");
+		Recette saved2 = recetteRepository.save(r2);
+		mockMvc.perform(post("/api/menu")
+				.contentType(MediaType.APPLICATION_JSON)
+				.content(objectMapper.writeValueAsString(new com.example.recette.dto.MenuSelectionRequest(List.of(saved2.getId())))))
+				.andExpect(status().isOk());
+
+		Recette r3 = new Recette();
+		r3.setTitre("Soupe poireau");
+		Recette saved3 = recetteRepository.save(r3);
+		mockMvc.perform(post("/api/menu")
+				.contentType(MediaType.APPLICATION_JSON)
+				.content(objectMapper.writeValueAsString(new com.example.recette.dto.MenuSelectionRequest(List.of(saved3.getId())))))
+				.andExpect(status().isOk());
+
+		// L'historique ne doit contenir que 2 occurrences
+		mockMvc.perform(get("/api/menu/history"))
+				.andExpect(status().isOk())
+				.andExpect(jsonPath("$.length()").value(2))
+				.andExpect(jsonPath("$[0].recettes[0].titre").value("Soupe poireau"))
+				.andExpect(jsonPath("$[1].recettes[0].titre").value("Tarte aux pommes"));
 	}
 }
