@@ -6,5 +6,8 @@ import java.util.List;
 public record MenuSelectionHistoryResponse(
         Long id,
         Instant createdAt,
+        String coursesText,
+        String stockJson,
+        String autresJson,
         List<RecetteResponse> recettes
 ) {}

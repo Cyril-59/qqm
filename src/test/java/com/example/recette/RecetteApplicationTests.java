@@ -90,7 +90,7 @@ class RecetteApplicationTests {
 		);
 
 		RecetteRequest r = new RecetteRequest(
-				null, "Pâtes nature", "Faire bouillir l'eau salée, cuire 10 min.", java.util.Set.of("Végétarien", "Express"), List.of(savedLinked.getId()), false, false, true, true, List.of(ing)
+				null, "Pâtes nature", "Faire bouillir l'eau salée, cuire 10 min.", java.util.Set.of("Végé", "Express"), List.of(savedLinked.getId()), false, false, true, true, List.of(ing)
 		);
 
 		mockMvc.perform(post("/api/recettes")
@@ -132,7 +132,7 @@ class RecetteApplicationTests {
 				null, 20, new ProduitReferenceRequest(savedProduit.getId(), savedProduit.getLabel())
 		);
 		RecetteRequest createReq = new RecetteRequest(
-				null, "Dahl de lentilles", "Cuire 20 min.", java.util.Set.of("Végétarien"), List.of(), false, false, true, true, List.of(ing)
+				null, "Dahl de lentilles", "Cuire 20 min.", java.util.Set.of("Végé"), List.of(), false, false, true, true, List.of(ing)
 		);
 		String res = mockMvc.perform(post("/api/recettes")
 						.contentType(MediaType.APPLICATION_JSON)
@@ -149,7 +149,7 @@ class RecetteApplicationTests {
 				createdIngId, 25, new ProduitReferenceRequest(savedProduit.getId(), savedProduit.getLabel())
 		);
 		RecetteRequest updateReq = new RecetteRequest(
-				createdId, "Dahl de lentilles au coco", "Cuire 25 min.", java.util.Set.of("Végétarien"),
+				createdId, "Dahl de lentilles au coco", "Cuire 25 min.", java.util.Set.of("Végé"),
 				List.of(savedPartner.getId()), false, false, true, true, List.of(updateIng)
 		);
 

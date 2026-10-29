@@ -1,10 +1,14 @@
 package com.example.recette.dto;
 
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-
 import java.util.List;
 
-@JsonIgnoreProperties(ignoreUnknown = true)
 public record MenuSelectionRequest(
-        List<Long> recetteIds
-) {}
+        List<Long> recetteIds,
+        String coursesText,
+        String stockJson,
+        String autresJson
+) {
+    public MenuSelectionRequest(List<Long> recetteIds) {
+        this(recetteIds, null, null, null);
+    }
+}

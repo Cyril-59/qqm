@@ -60,17 +60,29 @@ public class MenuSelectionService {
                     .filter(Objects::nonNull)
                     .distinct()
                     .toList() : List.of();
-            return new MenuSelectionHistoryResponse(ms.getId(), ms.getCreatedAt(), list);
+            return new MenuSelectionHistoryResponse(
+                    ms.getId(),
+                    ms.getCreatedAt(),
+                    ms.getCoursesText(),
+                    ms.getStockJson(),
+                    ms.getAutresJson(),
+                    list
+            );
         }).toList();
     }
 
     @Transactional
     public List<RecetteResponse> saveSelection(MenuSelectionRequest request) {
         MenuSelection menuSelection = new MenuSelection();
-        if (request != null && request.recetteIds() != null && !request.recetteIds().isEmpty()) {
-            List<Long> distinctIds = request.recetteIds().stream().distinct().toList();
-            List<Recette> recettes = recetteRepository.findAllById(distinctIds);
-            menuSelection.setRecettes(recettes);
+        if (request != null) {
+            menuSelection.setCoursesText(request.coursesText());
+            menuSelection.setStockJson(request.stockJson());
+            menuSelection.setAutresJson(request.autresJson());
+            if (request.recetteIds() != null && !request.recetteIds().isEmpty()) {
+                List<Long> distinctIds = request.recetteIds().stream().distinct().toList();
+                List<Recette> recettes = recetteRepository.findAllById(distinctIds);
+                menuSelection.setRecettes(recettes);
+            }
         }
         menuSelectionRepository.save(menuSelection);
 
