@@ -7,6 +7,7 @@ import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotBlank;
+import org.hibernate.annotations.BatchSize;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.LinkedHashSet;
@@ -35,6 +36,7 @@ public class Recette {
     @ElementCollection(fetch = FetchType.LAZY)
     @CollectionTable(name = "recette_tags", joinColumns = @JoinColumn(name = "recette_id"))
     @Column(name = "tag")
+    @BatchSize(size = 100)
     private Set<String> tags = new LinkedHashSet<>();
 
     @ManyToMany(fetch = FetchType.LAZY)
@@ -43,10 +45,11 @@ public class Recette {
             joinColumns = @JoinColumn(name = "recette_id"),
             inverseJoinColumns = @JoinColumn(name = "linked_recette_id")
     )
+    @BatchSize(size = 100)
     private Set<Recette> linkedRecettes = new LinkedHashSet<>();
 
     @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
-    private List<Ingredient> ingredients = new ArrayList<>();
+    private Set<Ingredient> ingredients = new LinkedHashSet<>();
 
     private Boolean ete;
     private Boolean printemps;
@@ -117,12 +120,12 @@ public class Recette {
         this.linkedRecettes = linkedRecettes;
     }
 
-    public List<Ingredient> getIngredients() {
+    public Set<Ingredient> getIngredients() {
         return ingredients;
     }
 
-    public void setIngredients(List<Ingredient> ingredients) {
-        this.ingredients = ingredients;
+    public void setIngredients(Set<Ingredient> ingredients) {
+        this.ingredients = ingredients != null ? ingredients : new LinkedHashSet<>();
     }
 
     public Boolean getEte() {

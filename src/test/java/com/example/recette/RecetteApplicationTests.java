@@ -268,4 +268,44 @@ class RecetteApplicationTests {
 				.andExpect(jsonPath("$[0].recettes[0].titre").value("Soupe poireau"))
 				.andExpect(jsonPath("$[1].recettes[0].titre").value("Tarte aux pommes"));
 	}
+
+	@Test
+	void testNoDuplicateIngredientsWithMultipleTags() throws Exception {
+		Produit p1 = new Produit();
+		p1.setLabel("Carotte");
+		p1.setUnite("pièce(s)");
+		p1.setType("Légume");
+		Produit savedP1 = produitRepository.save(p1);
+
+		Produit p2 = new Produit();
+		p2.setLabel("Poireau");
+		p2.setUnite("pièce(s)");
+		p2.setType("Légume");
+		Produit savedP2 = produitRepository.save(p2);
+
+		IngredientRequest ing1 = new IngredientRequest(null, 2, new ProduitReferenceRequest(savedP1.getId(), savedP1.getLabel()));
+		IngredientRequest ing2 = new IngredientRequest(null, 1, new ProduitReferenceRequest(savedP2.getId(), savedP2.getLabel()));
+
+		// Recette avec 2 ingrédients et 3 tags
+		RecetteRequest req = new RecetteRequest(
+				null, "Soupe d'hiver aux 3 tags", "Cuire 30 min",
+				java.util.Set.of("Favori", "Végé", "Express"),
+				List.of(), false, false, true, false, List.of(ing1, ing2)
+		);
+
+		String json = mockMvc.perform(post("/api/recettes")
+						.contentType(MediaType.APPLICATION_JSON)
+						.content(objectMapper.writeValueAsString(req)))
+				.andExpect(status().isOk())
+				.andExpect(jsonPath("$.ingredients.length()").value(2))
+				.andReturn().getResponse().getContentAsString();
+
+		Long createdId = objectMapper.readTree(json).get("id").asLong();
+
+		// Vérifier par GET /api/recettes/{id} qu'il n'y a PAS de duplication cartésienne avec les 3 tags
+		mockMvc.perform(get("/api/recettes/" + createdId))
+				.andExpect(status().isOk())
+				.andExpect(jsonPath("$.ingredients.length()").value(2))
+				.andExpect(jsonPath("$.tags.length()").value(3));
+	}
 }

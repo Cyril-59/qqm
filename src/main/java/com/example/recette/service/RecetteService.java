@@ -121,6 +121,19 @@ public class RecetteService {
             return;
         }
 
+        // Déduplication défensive des ingrédients reçus par id ou produit
+        Map<Long, IngredientRequest> deduplicatedRequests = new LinkedHashMap<>();
+        for (IngredientRequest req : requests) {
+            if (req != null) {
+                Long key = req.id() != null ? req.id() : (req.produit() != null ? req.produit().id() : null);
+                if (key != null) {
+                    deduplicatedRequests.putIfAbsent(key, req);
+                } else {
+                    deduplicatedRequests.put((long) -deduplicatedRequests.size(), req);
+                }
+            }
+        }
+
         Map<Long, Ingredient> existingById = new HashMap<>();
         for (Ingredient ing : recette.getIngredients()) {
             if (ing.getId() != null) {
@@ -131,7 +144,7 @@ public class RecetteService {
         Set<Long> retainIds = new HashSet<>();
         List<Ingredient> toAdd = new ArrayList<>();
 
-        for (IngredientRequest ingReq : requests) {
+        for (IngredientRequest ingReq : deduplicatedRequests.values()) {
             Produit p = null;
             if (ingReq.produit() != null && ingReq.produit().id() != null) {
                 p = produitRepository.findById(ingReq.produit().id()).orElse(null);

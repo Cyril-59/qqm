@@ -1,10 +1,10 @@
 package com.example.recette.dto;
 
+import com.example.recette.model.Ingredient;
 import com.example.recette.model.Recette;
 
 import java.time.Instant;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 
 public record RecetteResponse(
         Long id,
@@ -22,6 +22,23 @@ public record RecetteResponse(
 ) {
     public static RecetteResponse from(Recette r) {
         if (r == null) return null;
+
+        List<IngredientResponse> uniqueIngredients = List.of();
+        if (r.getIngredients() != null && !r.getIngredients().isEmpty()) {
+            Map<Long, IngredientResponse> seen = new LinkedHashMap<>();
+            for (Ingredient ing : r.getIngredients()) {
+                if (ing != null) {
+                    Long key = ing.getId() != null ? ing.getId() : (ing.getProduit() != null ? ing.getProduit().getId() : null);
+                    if (key != null) {
+                        seen.putIfAbsent(key, IngredientResponse.from(ing));
+                    } else {
+                        seen.put((long) -seen.size(), IngredientResponse.from(ing));
+                    }
+                }
+            }
+            uniqueIngredients = new ArrayList<>(seen.values());
+        }
+
         return new RecetteResponse(
                 r.getId(),
                 r.getTitre(),
@@ -32,7 +49,7 @@ public record RecetteResponse(
                 r.getPrintemps(),
                 r.getAutomne(),
                 r.getHiver(),
-                r.getIngredients() != null ? r.getIngredients().stream().map(IngredientResponse::from).toList() : List.of(),
+                uniqueIngredients,
                 r.getCreatedAt(),
                 r.getUpdatedAt()
         );
