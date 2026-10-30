@@ -82,13 +82,26 @@ public class ProduitService {
         return Character.toUpperCase(trimmed.charAt(0)) + trimmed.substring(1);
     }
 
+    public static String normalizeUnite(String unite) {
+        if (unite == null) return null;
+        String trimmed = unite.trim();
+        if (trimmed.isEmpty()) return trimmed;
+        if ("boite".equalsIgnoreCase(trimmed) || "boîte".equalsIgnoreCase(trimmed)) {
+            return "boîte";
+        }
+        if ("grammes".equalsIgnoreCase(trimmed) || "gramme".equalsIgnoreCase(trimmed) || "g".equalsIgnoreCase(trimmed)) {
+            return "g";
+        }
+        return trimmed;
+    }
+
     private void mapRequestToEntity(ProduitRequest request, Produit produit) {
         produit.setLabel(request.label());
         produit.setEte(request.ete());
         produit.setPrintemps(request.printemps());
         produit.setAutomne(request.automne());
         produit.setHiver(request.hiver());
-        produit.setUnite(request.unite());
+        produit.setUnite(normalizeUnite(request.unite()));
         produit.setType(normalizeType(request.type()));
     }
 }

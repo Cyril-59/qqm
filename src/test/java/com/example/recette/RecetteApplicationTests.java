@@ -57,7 +57,7 @@ class RecetteApplicationTests {
 	@Test
 	void testCreateAndGetProduit() throws Exception {
 		ProduitRequest produitRequest = new ProduitRequest(
-				null, "Tomate", true, true, false, false, "kg", "épicerie vrac"
+				null, "Tomate", true, true, false, false, "grammes", "épicerie vrac"
 		);
 
 		mockMvc.perform(post("/api/produits")
@@ -66,6 +66,7 @@ class RecetteApplicationTests {
 				.andExpect(status().isOk())
 				.andExpect(jsonPath("$.id").exists())
 				.andExpect(jsonPath("$.label").value("Tomate"))
+				.andExpect(jsonPath("$.unite").value("g"))
 				.andExpect(jsonPath("$.type").value("Vrac"));
 
 		mockMvc.perform(get("/api/produits"))

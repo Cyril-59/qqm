@@ -7,7 +7,9 @@ import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 @Entity
 @Table(name = "MENU_SELECTION")
@@ -27,6 +29,11 @@ public class MenuSelection {
 
     @Column(columnDefinition = "TEXT")
     private String autresJson;
+
+    @ElementCollection(fetch = FetchType.EAGER)
+    @CollectionTable(name = "menu_selection_done_recettes", joinColumns = @JoinColumn(name = "menu_selection_id"))
+    @Column(name = "recette_id")
+    private Set<Long> doneRecipeIds = new HashSet<>();
 
     @ManyToMany(fetch = FetchType.LAZY)
     @JoinTable(
@@ -70,6 +77,14 @@ public class MenuSelection {
 
     public void setAutresJson(String autresJson) {
         this.autresJson = autresJson;
+    }
+
+    public Set<Long> getDoneRecipeIds() {
+        return doneRecipeIds;
+    }
+
+    public void setDoneRecipeIds(Set<Long> doneRecipeIds) {
+        this.doneRecipeIds = doneRecipeIds != null ? doneRecipeIds : new HashSet<>();
     }
 
     public List<Recette> getRecettes() {

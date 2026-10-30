@@ -33,6 +33,15 @@ public record ProduitResponse(
                 type = Character.toUpperCase(trimmed.charAt(0)) + trimmed.substring(1);
             }
         }
+        String unite = p.getUnite();
+        if (unite != null) {
+            String trimmed = unite.trim();
+            if ("boite".equalsIgnoreCase(trimmed) || "boîte".equalsIgnoreCase(trimmed)) {
+                unite = "boîte";
+            } else if ("grammes".equalsIgnoreCase(trimmed) || "gramme".equalsIgnoreCase(trimmed) || "g".equalsIgnoreCase(trimmed)) {
+                unite = "g";
+            }
+        }
         return new ProduitResponse(
                 p.getId(),
                 p.getLabel(),
@@ -40,7 +49,7 @@ public record ProduitResponse(
                 p.getPrintemps(),
                 p.getAutomne(),
                 p.getHiver(),
-                p.getUnite(),
+                unite,
                 type,
                 p.getCreatedAt(),
                 p.getUpdatedAt()

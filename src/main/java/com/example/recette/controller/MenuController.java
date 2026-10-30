@@ -39,6 +39,12 @@ public class MenuController {
         return menuSelectionService.saveSelection(request);
     }
 
+    @PatchMapping("/{menuId}/done/{recetteId}")
+    @Operation(summary = "Basculer l'état réalisé d'une recette pour un menu donné")
+    public MenuSelectionHistoryResponse toggleDone(@PathVariable Long menuId, @PathVariable Long recetteId) {
+        return menuSelectionService.toggleRecipeDone(menuId, recetteId);
+    }
+
     @DeleteMapping
     @Operation(summary = "Réinitialiser la sélection du menu")
     public void clearSelection() {

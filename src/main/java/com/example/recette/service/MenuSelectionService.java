@@ -66,9 +66,47 @@ public class MenuSelectionService {
                     ms.getCoursesText(),
                     ms.getStockJson(),
                     ms.getAutresJson(),
+                    ms.getDoneRecipeIds() != null ? new HashSet<>(ms.getDoneRecipeIds()) : Collections.emptySet(),
                     list
             );
         }).toList();
+    }
+
+    @Transactional
+    public MenuSelectionHistoryResponse toggleRecipeDone(Long menuId, Long recetteId) {
+        MenuSelection ms = menuSelectionRepository.findById(menuId)
+                .orElseThrow(() -> new NoSuchElementException("Menu selection non trouvée: " + menuId));
+        if (ms.getDoneRecipeIds() == null) {
+            ms.setDoneRecipeIds(new HashSet<>());
+        }
+        if (ms.getDoneRecipeIds().contains(recetteId)) {
+            ms.getDoneRecipeIds().remove(recetteId);
+        } else {
+            ms.getDoneRecipeIds().add(recetteId);
+        }
+        menuSelectionRepository.save(ms);
+
+        List<RecetteResponse> allRecettes = recetteRepository.findAll().stream()
+                .map(RecetteResponse::from)
+                .toList();
+        Map<Long, RecetteResponse> recetteMap = allRecettes.stream()
+                .collect(Collectors.toMap(RecetteResponse::id, r -> r, (r1, r2) -> r1));
+
+        List<RecetteResponse> list = ms.getRecettes() != null ? ms.getRecettes().stream()
+                .map(r -> recetteMap.get(r.getId()))
+                .filter(Objects::nonNull)
+                .distinct()
+                .toList() : List.of();
+
+        return new MenuSelectionHistoryResponse(
+                ms.getId(),
+                ms.getCreatedAt(),
+                ms.getCoursesText(),
+                ms.getStockJson(),
+                ms.getAutresJson(),
+                new HashSet<>(ms.getDoneRecipeIds()),
+                list
+        );
     }
 
     @Transactional
