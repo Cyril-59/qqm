@@ -39,9 +39,17 @@ public record RecetteResponse(
             uniqueIngredients = new ArrayList<>(seen.values());
         }
 
+        String titre = r.getTitre();
+        if (titre != null) {
+            String trimmed = titre.trim();
+            if (!trimmed.isEmpty()) {
+                titre = Character.toUpperCase(trimmed.charAt(0)) + trimmed.substring(1);
+            }
+        }
+
         return new RecetteResponse(
                 r.getId(),
-                r.getTitre(),
+                titre,
                 r.getInstructions(),
                 r.getTags() != null ? r.getTags() : Set.of(),
                 r.getLinkedRecettes() != null ? r.getLinkedRecettes().stream().map(RecetteSummaryResponse::from).toList() : List.of(),

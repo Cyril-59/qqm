@@ -44,7 +44,7 @@ public record ProduitResponse(
         }
         return new ProduitResponse(
                 p.getId(),
-                p.getLabel(),
+                p.getLabel() != null ? p.getLabel().trim().toLowerCase() : null,
                 p.getEte(),
                 p.getPrintemps(),
                 p.getAutomne(),

@@ -95,8 +95,13 @@ public class ProduitService {
         return trimmed;
     }
 
+    public static String normalizeLabel(String label) {
+        if (label == null) return null;
+        return label.trim().toLowerCase();
+    }
+
     private void mapRequestToEntity(ProduitRequest request, Produit produit) {
-        produit.setLabel(request.label());
+        produit.setLabel(normalizeLabel(request.label()));
         produit.setEte(request.ete());
         produit.setPrintemps(request.printemps());
         produit.setAutomne(request.automne());

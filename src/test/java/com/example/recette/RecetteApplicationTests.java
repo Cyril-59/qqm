@@ -65,7 +65,7 @@ class RecetteApplicationTests {
 						.content(objectMapper.writeValueAsString(produitRequest)))
 				.andExpect(status().isOk())
 				.andExpect(jsonPath("$.id").exists())
-				.andExpect(jsonPath("$.label").value("Tomate"))
+				.andExpect(jsonPath("$.label").value("tomate"))
 				.andExpect(jsonPath("$.unite").value("g"))
 				.andExpect(jsonPath("$.type").value("Vrac"));
 
@@ -104,7 +104,7 @@ class RecetteApplicationTests {
 				.andExpect(jsonPath("$.tags[0]").exists())
 				.andExpect(jsonPath("$.linkedRecettes[0].id").value(savedLinked.getId()))
 				.andExpect(jsonPath("$.ingredients[0].quantite").value(250))
-				.andExpect(jsonPath("$.ingredients[0].produit.label").value("Pâtes"));
+				.andExpect(jsonPath("$.ingredients[0].produit.label").value("pâtes"));
 
 		// Vérifier que la recette liée réciproquement possède bien le lien inverse
 		mockMvc.perform(get("/api/recettes/" + savedLinked.getId()))

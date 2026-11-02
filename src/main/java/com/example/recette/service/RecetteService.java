@@ -99,8 +99,15 @@ public class RecetteService {
         }
     }
 
+    public static String normalizeTitre(String titre) {
+        if (titre == null) return null;
+        String trimmed = titre.trim();
+        if (trimmed.isEmpty()) return trimmed;
+        return Character.toUpperCase(trimmed.charAt(0)) + trimmed.substring(1);
+    }
+
     private void mapRequestToEntity(RecetteRequest request, Recette recette) {
-        recette.setTitre(request.titre());
+        recette.setTitre(normalizeTitre(request.titre()));
         recette.setInstructions(request.instructions());
         if (request.tags() != null) {
             recette.setTags(new java.util.LinkedHashSet<>(request.tags()));
